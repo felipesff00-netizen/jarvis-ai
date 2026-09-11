@@ -1,0 +1,33 @@
+{
+  "name": "jarvis-ai",
+  "version": "0.1.0",
+  "description": "JARVIS - Advanced Personal AI Assistant | Modular, Secure, Multi-Device Architecture",
+  "private": true,
+  "workspaces": [
+    "packages/backend",
+    "packages/frontend",
+    "packages/shared"
+  ],
+  "scripts": {
+    "install:all": "yarn install",
+    "dev": "yarn workspace @jarvis/backend dev & yarn workspace @jarvis/frontend dev",
+    "build": "yarn workspace @jarvis/shared build && yarn workspace @jarvis/backend build && yarn workspace @jarvis/frontend build",
+    "test": "yarn workspace @jarvis/backend test && yarn workspace @jarvis/frontend test",
+    "lint": "yarn workspace @jarvis/backend lint && yarn workspace @jarvis/frontend lint",
+    "format": "yarn workspace @jarvis/backend format && yarn workspace @jarvis/frontend format",
+    "db:migrate": "yarn workspace @jarvis/backend db:migrate",
+    "db:rollback": "yarn workspace @jarvis/backend db:rollback",
+    "db:seed": "yarn workspace @jarvis/backend db:seed",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "devDependencies": {
+    "husky": "^8.0.0",
+    "lint-staged": "^14.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "yarn": ">=3.6.0"
+  }
+}

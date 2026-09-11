@@ -1,0 +1,100 @@
+version: '3.9'
+
+services:
+  # ==========================================
+  # PostgreSQL Database
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: jarvis-postgres
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-jarvis_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_me_in_production}
+      POSTGRES_DB: ${DB_NAME:-jarvis_ai_dev}
+      POSTGRES_INITDB_ARGS: --encoding=UTF8
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-jarvis_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jarvis-network
+    restart: unless-stopped
+
+  # ==========================================
+  # Redis Cache & Sessions
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: jarvis-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jarvis-network
+    restart: unless-stopped
+
+  # ==========================================
+  # pgAdmin (Database Management)
+  # ==========================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: jarvis-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@jarvis-ai.local
+      PGADMIN_DEFAULT_PASSWORD: ${DB_PASSWORD:-change_me_in_production}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - jarvis-network
+    restart: unless-stopped
+    profiles:
+      - dev-tools
+
+  # ==========================================
+  # Redis Commander (Redis Management)
+  # ==========================================
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: jarvis-redis-commander
+    environment:
+      - REDIS_HOSTS=default:${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - jarvis-network
+    restart: unless-stopped
+    profiles:
+      - dev-tools
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  pgadmin-data:
+    driver: local
+
+networks:
+  jarvis-network:
+    driver: bridge
